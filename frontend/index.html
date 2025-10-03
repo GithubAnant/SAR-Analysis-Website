@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAR Analysis - Real-time Change Detection</title>
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛰️</text></svg>">
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles for space/console look */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* Deep Space Black fallback */
+            color: #e2e8f0; /* Light text for dark theme */
+            
+            /* Background Image Setup */
+            background-image: url('https://assets.science.nasa.gov/dynamicimage/assets/science/missions/nisar/Post%204%20-%20NISAR_by%20the%20numbers.png?w=900&h=900&fit=clip&crop=faces%2Cfocalpoint');
+            /* Add properties to make it cover the entire screen: */
+            background-size: cover; 
+            background-position: center;
+            background-attachment: fixed; /* Optional: Makes the background static when scrolling */
+        }
+        .container-card {
+            background-color: rgba(25, 30, 40, 0.95); /* Dark translucent background */
+            border: 1px solid #1e40af; /* Deep blue border */
+            transition: all 0.3s ease-in-out;
+            /* Subtle blue glow effect for the futuristic console feel */
+            box-shadow: 0 0 15px rgba(30, 64, 175, 0.5), 0 0 5px rgba(30, 64, 175, 0.8);
+        }
+        .container-card:hover {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.7), 0 0 8px rgba(59, 130, 246, 1);
+            transform: translateY(-2px);
+        }
+        .btn-primary {
+            transition: all 0.2s ease-in-out;
+            background-color: #3b82f6; /* Blue-500 */
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+        .btn-primary:hover:not(:disabled) {
+            background-color: #2563eb; /* Blue-700 */
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.8); /* Stronger glow on hover */
+            transform: scale(1.02); /* Pop out effect */
+        }
+        .btn-primary:disabled {
+            background-color: #6b7280;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .coord-display {
+            background-color: #1f2937; /* Dark slate */
+            border: 2px solid #60a5fa; /* Light blue border for focus */
+            color: #dbeafe; /* Very light blue text */
+            box-shadow: inset 0 0 10px rgba(59, 130, 246, 0.3); /* Inner glow */
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .analysis-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            border: 2px solid #3b82f6;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+        .stats-card {
+            background-color: rgba(31, 41, 55, 0.9);
+            border: 1px solid #374151;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+        }
+        .error-message {
+            background-color: rgba(239, 68, 68, 0.1);
+            border: 1px solid #ef4444;
+            color: #fecaca;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        .success-message {
+            background-color: rgba(34, 197, 94, 0.1);
+            border: 1px solid #22c55e;
+            color: #bbf7d0;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        .select-input {
+             background-color: #1f2937;
+             border-color: #4b5563;
+             color: #e2e8f0;
+             transition: all 0.2s;
+        }
+        .select-input:focus {
+             border-color: #3b82f6;
+             box-shadow: 0 0 0 2px #3b82f6;
+        }
+        .input-field {
+            background-color: #1f2937;
+            border-color: #4b5563;
+            color: #e2e8f0;
+            transition: all 0.2s;
+        }
+        .input-field:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px #3b82f6;
+        }
+        .header-logo {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 10px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.8));
+        }
+        .tab-button {
+            background-color: rgba(55, 65, 81, 0.8);
+            border: 1px solid #4b5563;
+            color: #d1d5db;
+            transition: all 0.2s;
+        }
+        .tab-button.active {
+            background-color: #3b82f6;
+            border-color: #2563eb;
+            color: white;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+        }
+        .tab-button:hover:not(.active) {
+            background-color: rgba(75, 85, 99, 0.8);
+            border-color: #6b7280;
+        }
+    </style>
+</head>
+<body class="min-h-screen pt-4 sm:pt-6 pb-8 flex justify-center items-start">
+
+    <div id="app" class="w-full max-w-7xl">
+
+        <!-- Header -->
+        <header class="text-center mb-6 pt-4 pb-6 bg-transparent">
+            <div class="header-logo"></div> 
+            
+            <h1 class="text-5xl font-extrabold text-white tracking-wider mb-2" 
+                style="text-shadow: 0 0 10px #3b82f6, 0 0 20px #2563eb;">
+                <span class="text-blue-400">SAR</span> Analysis Platform
+            </h1>
+            <p class="text-xl font-medium text-white mt-1" 
+               style="text-shadow: 0 0 5px #1e40af, 0 0 10px #1d4ed8;">
+                Real-time Change Detection & Analysis
+            </p>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <div class="flex justify-center mb-6">
+            <div class="flex space-x-2 bg-gray-800 bg-opacity-50 p-2 rounded-lg">
+                <button onclick="showTab('hotspot')" id="hotspot-tab" class="tab-button active px-4 py-2 rounded-md font-medium">
+                    Hotspot Analysis
+                </button>
+                <button onclick="showTab('upload')" id="upload-tab" class="tab-button px-4 py-2 rounded-md font-medium">
+                    Upload Images
+                </button>
+            </div>
+        </div>
+
+        <!-- Hotspot Analysis Tab -->
+        <div id="hotspot-tab-content" class="container-card p-6 sm:p-10 rounded-xl">
+            <h2 class="text-3xl font-bold text-blue-300 mb-6 border-b border-blue-700 pb-2">Hotspot Analysis</h2>
+            
+            <form id="hotspot-form" class="space-y-6">
+                <!-- Location Selection -->
+                <div>
+                    <label for="location-select" class="block text-lg font-medium text-gray-300 mb-2">Select Location</label>
+                    <select id="location-select" class="select-input w-full pl-3 pr-10 py-3 text-base border rounded-lg focus:outline-none" required>
+                        <option value="" disabled selected>-- Loading hotspots... --</option>
+                    </select>
+                </div>
+
+                <!-- Date Selection -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="date-before" class="block text-lg font-medium text-gray-300 mb-2">Before Date</label>
+                        <input type="date" id="date-before" class="input-field w-full px-3 py-3 border rounded-lg focus:outline-none" required>
+                    </div>
+                    <div>
+                        <label for="date-after" class="block text-lg font-medium text-gray-300 mb-2">After Date</label>
+                        <input type="date" id="date-after" class="input-field w-full px-3 py-3 border rounded-lg focus:outline-none" required>
+                    </div>
+                </div>
+
+                <!-- Analysis Button -->
+                <button type="submit" id="analyze-btn" class="btn-primary w-full py-3 px-6 rounded-lg font-bold text-white focus:outline-none focus:ring-4 focus:ring-blue-400">
+                    <span id="analyze-text">Analyze Changes</span>
+                    <div id="analyze-loading" class="loading hidden ml-2"></div>
+                </button>
+            </form>
+
+            <!-- Status Messages -->
+            <div id="status-messages"></div>
+
+            <!-- Results Section -->
+            <div id="results-section" class="hidden mt-8">
+                <h3 class="text-2xl font-bold text-blue-300 mb-4 border-b border-blue-700 pb-2">Analysis Results</h3>
+                
+                <!-- Statistics -->
+                <div id="statistics-section" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <!-- Stats will be populated here -->
+                </div>
+
+                <!-- Visualizations -->
+                <div id="visualizations-section" class="space-y-6">
+                    <!-- Images will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Upload Analysis Tab -->
+        <div id="upload-tab-content" class="container-card p-6 sm:p-10 rounded-xl hidden">
+            <h2 class="text-3xl font-bold text-blue-300 mb-6 border-b border-blue-700 pb-2">Upload Image Analysis</h2>
+            
+            <form id="upload-form" class="space-y-6">
+                <!-- File Upload Section -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="image-before" class="block text-lg font-medium text-gray-300 mb-2">Before Image</label>
+                        <input type="file" id="image-before" accept="image/*" class="input-field w-full px-3 py-3 border rounded-lg focus:outline-none" required>
+                        <p class="text-sm text-gray-400 mt-1">Supported formats: JPEG, PNG, TIFF</p>
+                    </div>
+                    <div>
+                        <label for="image-after" class="block text-lg font-medium text-gray-300 mb-2">After Image</label>
+                        <input type="file" id="image-after" accept="image/*" class="input-field w-full px-3 py-3 border rounded-lg focus:outline-none" required>
+                        <p class="text-sm text-gray-400 mt-1">Supported formats: JPEG, PNG, TIFF</p>
+                    </div>
+                </div>
+
+                <!-- Upload Analysis Button -->
+                <button type="submit" id="upload-analyze-btn" class="btn-primary w-full py-3 px-6 rounded-lg font-bold text-white focus:outline-none focus:ring-4 focus:ring-blue-400">
+                    <span id="upload-analyze-text">Analyze Uploaded Images</span>
+                    <div id="upload-analyze-loading" class="loading hidden ml-2"></div>
+                </button>
+            </form>
+
+            <!-- Upload Status Messages -->
+            <div id="upload-status-messages"></div>
+
+            <!-- Upload Results Section -->
+            <div id="upload-results-section" class="hidden mt-8">
+                <h3 class="text-2xl font-bold text-blue-300 mb-4 border-b border-blue-700 pb-2">Upload Analysis Results</h3>
+                
+                <!-- Upload Statistics -->
+                <div id="upload-statistics-section" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <!-- Stats will be populated here -->
+                </div>
+
+                <!-- Upload Visualizations -->
+                <div id="upload-visualizations-section" class="space-y-6">
+                    <!-- Images will be populated here -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // API Configuration
+        const API_BASE_URL = 'http://localhost:8000';
+        
+        // Global variables
+        let hotspots = {};
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            loadHotspots();
+            setupEventListeners();
+            setDefaultDates();
+        });
+
+        /**
+         * Load available hotspots from the backend
+         */
+        async function loadHotspots() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/hotspots`);
+                const data = await response.json();
+                hotspots = data.hotspots;
+                
+                const locationSelect = document.getElementById('location-select');
+                locationSelect.innerHTML = '<option value="" disabled selected>-- Select a Location --</option>';
+                
+                Object.keys(hotspots).forEach(key => {
+                    const hotspot = hotspots[key];
+                    const option = document.createElement('option');
+                    option.value = key;
+                    option.textContent = hotspot.name;
+                    locationSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading hotspots:', error);
+                showMessage('error', 'Failed to load hotspots. Please check if the backend server is running.');
+            }
+        }
+
+        /**
+         * Set default dates (30 days apart)
+         */
+        function setDefaultDates() {
+            const today = new Date();
+            const thirtyDaysAgo = new Date(today.getTime() - (30 * 24 * 60 * 60 * 1000));
+            
+            document.getElementById('date-after').value = today.toISOString().split('T')[0];
+            document.getElementById('date-before').value = thirtyDaysAgo.toISOString().split('T')[0];
+        }
+
+        /**
+         * Setup event listeners
+         */
+        function setupEventListeners() {
+            // Hotspot form submission
+            document.getElementById('hotspot-form').addEventListener('submit', handleHotspotAnalysis);
+            
+            // Upload form submission
+            document.getElementById('upload-form').addEventListener('submit', handleUploadAnalysis);
+        }
+
+        /**
+         * Show/hide tabs
+         */
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.getElementById('hotspot-tab-content').classList.add('hidden');
+            document.getElementById('upload-tab-content').classList.add('hidden');
+            
+            // Remove active class from all tabs
+            document.getElementById('hotspot-tab').classList.remove('active');
+            document.getElementById('upload-tab').classList.remove('active');
+            
+            // Show selected tab and mark as active
+            document.getElementById(`${tabName}-tab-content`).classList.remove('hidden');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        /**
+         * Handle hotspot analysis form submission
+         */
+        async function handleHotspotAnalysis(event) {
+            event.preventDefault();
+            
+            const location = document.getElementById('location-select').value;
+            const dateBefore = document.getElementById('date-before').value;
+            const dateAfter = document.getElementById('date-after').value;
+            
+            if (!location || !dateBefore || !dateAfter) {
+                showMessage('error', 'Please fill in all required fields.');
+                return;
+            }
+
+            // Validate dates
+            if (new Date(dateAfter) <= new Date(dateBefore)) {
+                showMessage('error', 'After date must be later than before date.');
+                return;
+            }
+            
+            setLoadingState('analyze', true);
+            clearMessages();
+            hideResults('results');
+            
+            try {
+                const formData = new FormData();
+                formData.append('location', location);
+                formData.append('date_before', dateBefore);
+                formData.append('date_after', dateAfter);
+                
+                const response = await fetch(`${API_BASE_URL}/analyze`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Analysis failed');
+                }
+                
+                const result = await response.json();
+                displayResults(result, 'results');
+                showMessage('success', 'Analysis completed successfully!');
+                
+            } catch (error) {
+                console.error('Analysis error:', error);
+                showMessage('error', `Analysis failed: ${error.message}`);
+            } finally {
+                setLoadingState('analyze', false);
+            }
+        }
+
+        /**
+         * Handle upload analysis form submission
+         */
+        async function handleUploadAnalysis(event) {
+            event.preventDefault();
+            
+            const imageBefore = document.getElementById('image-before').files[0];
+            const imageAfter = document.getElementById('image-after').files[0];
+            
+            if (!imageBefore || !imageAfter) {
+                showUploadMessage('error', 'Please select both before and after images.');
+                return;
+            }
+            
+            setLoadingState('upload-analyze', true);
+            clearUploadMessages();
+            hideResults('upload-results');
+            
+            try {
+                const formData = new FormData();
+                formData.append('image_before', imageBefore);
+                formData.append('image_after', imageAfter);
+                
+                const response = await fetch(`${API_BASE_URL}/upload-analyze`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Upload analysis failed');
+                }
+                
+                const result = await response.json();
+                displayResults(result, 'upload-results');
+                showUploadMessage('success', 'Upload analysis completed successfully!');
+                
+            } catch (error) {
+                console.error('Upload analysis error:', error);
+                showUploadMessage('error', `Upload analysis failed: ${error.message}`);
+            } finally {
+                setLoadingState('upload-analyze', false);
+            }
+        }
+
+        /**
+         * Display analysis results
+         */
+        function displayResults(result, resultType) {
+            const isUpload = resultType.includes('upload');
+            const statsSection = document.getElementById(`${isUpload ? 'upload-' : ''}statistics-section`);
+            const visualizationsSection = document.getElementById(`${isUpload ? 'upload-' : ''}visualizations-section`);
+            const resultsSection = document.getElementById(`${resultType}-section`);
+            
+            // Clear previous results
+            statsSection.innerHTML = '';
+            visualizationsSection.innerHTML = '';
+            
+            // Display statistics
+            if (result.statistics) {
+                const stats = result.statistics;
+                
+                const statsCards = [
+                    { title: 'Changed Pixels', value: stats.changed_pixels?.toLocaleString() || 'N/A', color: 'text-red-400' },
+                    { title: 'Change Percentage', value: stats.change_percentage ? `${stats.change_percentage.toFixed(2)}%` : 'N/A', color: 'text-yellow-400' },
+                    { title: 'Detected Regions', value: stats.num_regions || 'N/A', color: 'text-green-400' },
+                    { title: 'Analysis Date', value: new Date().toLocaleDateString(), color: 'text-blue-400' }
+                ];
+                
+                statsCards.forEach(stat => {
+                    const card = document.createElement('div');
+                    card.className = 'stats-card';
+                    card.innerHTML = `
+                        <h4 class="text-sm font-medium text-gray-400 mb-1">${stat.title}</h4>
+                        <p class="text-2xl font-bold ${stat.color}">${stat.value}</p>
+                    `;
+                    statsSection.appendChild(card);
+                });
+            }
+            
+            // Display visualizations
+            if (result.visualizations) {
+                const visualizations = result.visualizations;
+                
+                if (visualizations.side_by_side) {
+                    const sideByComparison = document.createElement('div');
+                    sideByComparison.className = 'mb-6';
+                    // Fix base64 image URL construction
+                    const imageData = visualizations.side_by_side.startsWith('data:') 
+                        ? visualizations.side_by_side 
+                        : `data:image/jpeg;base64,${visualizations.side_by_side}`;
+                    sideByComparison.innerHTML = `
+                        <h4 class="text-xl font-semibold text-white mb-3">Side-by-Side Comparison</h4>
+                        <img src="${imageData}" 
+                             alt="Side-by-side comparison" 
+                             class="analysis-image w-full">
+                    `;
+                    visualizationsSection.appendChild(sideByComparison);
+                }
+                
+                if (visualizations.dashboard) {
+                    const dashboard = document.createElement('div');
+                    dashboard.className = 'mb-6';
+                    // Fix base64 image URL construction
+                    const imageData = visualizations.dashboard.startsWith('data:') 
+                        ? visualizations.dashboard 
+                        : `data:image/jpeg;base64,${visualizations.dashboard}`;
+                    dashboard.innerHTML = `
+                        <h4 class="text-xl font-semibold text-white mb-3">Analysis Dashboard</h4>
+                        <img src="${imageData}" 
+                             alt="Analysis dashboard" 
+                             class="analysis-image w-full">
+                    `;
+                    visualizationsSection.appendChild(dashboard);
+                }
+            }
+            
+            // Show results section
+            resultsSection.classList.remove('hidden');
+        }
+
+        /**
+         * Set loading state for buttons
+         */
+        function setLoadingState(buttonType, isLoading) {
+            const button = document.getElementById(`${buttonType}-btn`);
+            const text = document.getElementById(`${buttonType}-text`);
+            const loading = document.getElementById(`${buttonType}-loading`);
+            
+            if (isLoading) {
+                button.disabled = true;
+                text.textContent = 'Processing...';
+                loading.classList.remove('hidden');
+            } else {
+                button.disabled = false;
+                text.textContent = buttonType.includes('upload') ? 'Analyze Uploaded Images' : 'Analyze Changes';
+                loading.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Show status messages
+         */
+        function showMessage(type, message) {
+            const messagesDiv = document.getElementById('status-messages');
+            const messageClass = type === 'error' ? 'error-message' : 'success-message';
+            messagesDiv.innerHTML = `<div class="${messageClass}">${message}</div>`;
+        }
+
+        function showUploadMessage(type, message) {
+            const messagesDiv = document.getElementById('upload-status-messages');
+            const messageClass = type === 'error' ? 'error-message' : 'success-message';
+            messagesDiv.innerHTML = `<div class="${messageClass}">${message}</div>`;
+        }
+
+        /**
+         * Clear status messages
+         */
+        function clearMessages() {
+            document.getElementById('status-messages').innerHTML = '';
+        }
+
+        function clearUploadMessages() {
+            document.getElementById('upload-status-messages').innerHTML = '';
+        }
+
+        /**
+         * Hide results sections
+         */
+        function hideResults(resultType) {
+            document.getElementById(`${resultType}-section`).classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
