@@ -10,8 +10,8 @@ A comprehensive Synthetic Aperture Radar (SAR) analysis platform for real-time c
 
 ### Step 1: Clone the Repository
 ```bash
-git clone <repository-url>
-cd SAR-analysis
+git clone https://github.com/GithubAnant/SAR-Analysis-Website.git
+cd SAR-Analysis-Website
 ```
 
 ### Step 2: Set up Virtual Environment (Recommended)
