@@ -130,14 +130,14 @@ async def analyze_location(
         if not image_before_bytes:
             raise HTTPException(
                 status_code=404, 
-                detail=f"Could not fetch SAR image for {date_before}. The image may not be available for this date/location."
+                detail=f"Could not fetch SAR image for {date_before} or any available date within 30 days. The images may not be available for this location."
             )
             
         image_after_bytes = await fetch_sar_image_async(lat, lon, date_after, bbox_size)
         if not image_after_bytes:
             raise HTTPException(
                 status_code=404, 
-                detail=f"Could not fetch SAR image for {date_after}. The image may not be available for this date/location."
+                detail=f"Could not fetch SAR image for {date_after} or any available date within 30 days. The images may not be available for this location."
             )
         
         # Load images
@@ -243,9 +243,9 @@ async def upload_analyze(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Upload analysis failed: {str(e)}")
 
-async def fetch_sar_image_async(lat: float, lon: float, date: str, bbox_size: float):
+async def fetch_sar_image_async(lat: float, lon: float, date: str, bbox_size: float, max_days_back: int = 30):
     """Async wrapper for SAR image fetching"""
-    return sentinel_api.fetch_sar_image(lat, lon, date, bbox_size)
+    return sentinel_api.fetch_sar_image(lat, lon, date, bbox_size, max_days_back)
 
 if __name__ == "__main__":
     import uvicorn
