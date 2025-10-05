@@ -4,6 +4,7 @@
 
 ## Architecture Overview
 
+
 ```mermaid
 graph TB
 
@@ -12,7 +13,7 @@ graph TB
     %% ========================
     subgraph "Frontend Layer"
         UI[Web Interface<br/>HTML / CSS / JS]
-        TABS[Tab Navigation<br/>Hotspot | Upload]
+        TABS[Tab Navigation<br/>Hotspot & Upload]
     end
 
     %% ========================
@@ -44,7 +45,7 @@ graph TB
     %% ========================
     subgraph "Analysis Pipeline"
         PREP[Image Preprocessing<br/>Resize, Normalize]
-        DETECT[Multi-Algorithm Detection<br/>• Structural Similarity<br/>• Perceptual Color Change<br/>• Gaussian Mixture Model<br/>• Consensus Voting]
+        DETECT[Multi-Algorithm Detection<br/>Structural Similarity, Perceptual Color Change, Gaussian Mixture Model, Consensus Voting]
         POST[Post Processing<br/>Noise Reduction, Filtering]
         STATS[Statistics Generation<br/>Change %, Regions, Pixels]
     end
@@ -102,43 +103,6 @@ graph TB
     style SIDEBYSIDE fill:#bbdefb,stroke:#333,stroke-width:1px
     style DASHBOARD fill:#bbdefb,stroke:#333,stroke-width:1px
     style JSON fill:#bbdefb,stroke:#333,stroke-width:1px
-
-### Component Details
-
-| Component | Technology | Purpose |
-|-----------|------------|---------|
-| **Frontend** | HTML5, CSS3, JavaScript, Tailwind | User interface and interaction |
-| **API Gateway** | FastAPI, Python | RESTful API endpoints and request handling |
-| **Image Loader** | OpenCV, PIL | Load and preprocess images from local assets |
-| **Change Detection** | OpenCV, NumPy, SciPy | Multi-algorithm change detection pipeline |
-| **Visualization** | Matplotlib, OpenCV | Generate comparison views and dashboards |
-| **Data Storage** | Local File System | Store image assets and temporary uploads |
-
-### Processing Pipeline
-
-1. **Image Acquisition**: Load before/after images from local assets or user uploads
-2. **Preprocessing**: Resize, normalize, and prepare images for analysis
-3. **Multi-Algorithm Detection**:
-   - Structural Similarity Index (SSIM)
-   - Perceptual Color Change Detection
-   - Gaussian Mixture Model (GMM)
-   - Consensus voting across algorithms
-4. **Post-Processing**: Filter noise, remove small artifacts, validate regions
-5. **Visualization**: Generate side-by-side comparisons and analysis dashboards
-6. **Statistics**: Calculate change percentages, affected areas, and region counts
-
-
-## How to Run the Application
-
-### Prerequisites
-- Python 3.8 or higher
-
-### Step 1: Clone the Repository
-```bash
-git clone https://github.com/GithubAnant/SAR-Analysis-Website.git
-cd SAR-Analysis-Website
-```
-
 ### Step 2: Set up Virtual Environment (Recommended)
 ```bash
 python -m venv .venv
