@@ -6,68 +6,102 @@
 
 ```mermaid
 graph TB
+
+    %% ========================
+    %% Frontend Layer
+    %% ========================
     subgraph "Frontend Layer"
-        UI[Web Interface<br/>HTML/CSS/JS]
+        UI[Web Interface<br/>HTML / CSS / JS]
         TABS[Tab Navigation<br/>Hotspot | Upload]
     end
-    
+
+    %% ========================
+    %% API Gateway
+    %% ========================
     subgraph "API Gateway"
         API[FastAPI Server<br/>Port: 8000]
     end
-    
+
+    %% ========================
+    %% Core Processing Engine
+    %% ========================
     subgraph "Core Processing Engine"
         IMG[Image Loader<br/>Local Assets]
-        CD[Change Detection<br/>Advanced Algorithms]
+        CD[Change Detection Engine<br/>Advanced Algorithms]
         VIZ[Visualization Engine<br/>Dashboard Generator]
     end
-    
+
+    %% ========================
+    %% Data Sources
+    %% ========================
     subgraph "Data Sources"
-        ASSETS[Local Image Assets<br/>antarctica1.webp, iraq1.webp, etc.]
-        UPLOAD[User Uploads<br/>Before/After Images]
+        ASSETS[Local Assets<br/>antarctica1.webp, iraq1.webp, etc.]
+        UPLOAD[User Uploads<br/>Before / After Images]
     end
-    
+
+    %% ========================
+    %% Analysis Pipeline
+    %% ========================
     subgraph "Analysis Pipeline"
         PREP[Image Preprocessing<br/>Resize, Normalize]
         DETECT[Multi-Algorithm Detection<br/>• Structural Similarity<br/>• Perceptual Color Change<br/>• Gaussian Mixture Model<br/>• Consensus Voting]
         POST[Post Processing<br/>Noise Reduction, Filtering]
         STATS[Statistics Generation<br/>Change %, Regions, Pixels]
     end
-    
+
+    %% ========================
+    %% Output Generation
+    %% ========================
     subgraph "Output Generation"
         SIDEBYSIDE[Side-by-Side View]
         DASHBOARD[Analysis Dashboard]
         JSON[Statistics JSON]
     end
-    
+
+    %% ========================
+    %% Connections
+    %% ========================
     UI --> API
     TABS --> API
-    
+
     API --> IMG
     API --> CD
     API --> VIZ
-    
+
     IMG --> ASSETS
     IMG --> UPLOAD
-    
+
     CD --> PREP
     PREP --> DETECT
     DETECT --> POST
     POST --> STATS
-    
+
     VIZ --> SIDEBYSIDE
     VIZ --> DASHBOARD
     STATS --> JSON
-    
+
     SIDEBYSIDE --> UI
     DASHBOARD --> UI
     JSON --> UI
-    
-    style UI fill:#e1f5fe
-    style API fill:#f3e5f5
-    style CD fill:#e8f5e8
-    style DETECT fill:#fff3e0
-    style ASSETS fill:#fce4ec
-```
+
+    %% ========================
+    %% Styles
+    %% ========================
+    style UI fill:#cce5ff,stroke:#333,stroke-width:1px
+    style TABS fill:#cce5ff,stroke:#333,stroke-width:1px
+    style API fill:#e1bee7,stroke:#333,stroke-width:1px
+    style IMG fill:#dcedc8,stroke:#333,stroke-width:1px
+    style CD fill:#dcedc8,stroke:#333,stroke-width:1px
+    style VIZ fill:#dcedc8,stroke:#333,stroke-width:1px
+    style ASSETS fill:#f8bbd0,stroke:#333,stroke-width:1px
+    style UPLOAD fill:#f8bbd0,stroke:#333,stroke-width:1px
+    style PREP fill:#ffe0b2,stroke:#333,stroke-width:1px
+    style DETECT fill:#ffe0b2,stroke:#333,stroke-width:1px
+    style POST fill:#ffe0b2,stroke:#333,stroke-width:1px
+    style STATS fill:#ffe0b2,stroke:#333,stroke-width:1px
+    style SIDEBYSIDE fill:#bbdefb,stroke:#333,stroke-width:1px
+    style DASHBOARD fill:#bbdefb,stroke:#333,stroke-width:1px
+    style JSON fill:#bbdefb,stroke:#333,stroke-width:1px
 
 ### Component Details
 
