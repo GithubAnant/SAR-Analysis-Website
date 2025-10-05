@@ -103,11 +103,8 @@ graph TB
     style SIDEBYSIDE fill:#bbdefb,stroke:#333,stroke-width:1px
     style DASHBOARD fill:#bbdefb,stroke:#333,stroke-width:1px
     style JSON fill:#bbdefb,stroke:#333,stroke-width:1px
-### Step 2: Set up Virtual Environment (Recommended)
-```bash
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 ```
+
 
 ### Step 3: Install Backend Dependencies
 ```bash
