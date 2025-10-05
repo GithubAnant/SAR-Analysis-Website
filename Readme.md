@@ -4,64 +4,47 @@
 
 ## Architecture Overview
 
-
 ```mermaid
 graph TB
 
-    %% ========================
     %% Frontend Layer
-    %% ========================
     subgraph "Frontend Layer"
         UI[Web Interface<br/>HTML / CSS / JS]
         TABS[Tab Navigation<br/>Hotspot & Upload]
     end
 
-    %% ========================
     %% API Gateway
-    %% ========================
     subgraph "API Gateway"
         API[FastAPI Server<br/>Port: 8000]
     end
 
-    %% ========================
     %% Core Processing Engine
-    %% ========================
     subgraph "Core Processing Engine"
         IMG[Image Loader<br/>Local Assets]
-        CD[Change Detection Engine<br/>Advanced Algorithms]
-        VIZ[Visualization Engine<br/>Dashboard Generator]
+        CD[Change Detection Engine]
+        VIZ[Visualization Engine]
     end
 
-    %% ========================
     %% Data Sources
-    %% ========================
     subgraph "Data Sources"
         ASSETS[Local Assets<br/>antarctica1.webp, iraq1.webp, etc.]
         UPLOAD[User Uploads<br/>Before / After Images]
     end
 
-    %% ========================
-    %% Analysis Pipeline
-    %% ========================
+    %% Analysis Pipeline (shortened)
     subgraph "Analysis Pipeline"
-        PREP[Image Preprocessing<br/>Resize, Normalize]
-        DETECT[Multi-Algorithm Detection<br/>Structural Similarity, Perceptual Color Change, Gaussian Mixture Model, Consensus Voting]
-        POST[Post Processing<br/>Noise Reduction, Filtering]
+        DETECT[Detection<br/>Structural + Color Change]
         STATS[Statistics Generation<br/>Change %, Regions, Pixels]
     end
 
-    %% ========================
     %% Output Generation
-    %% ========================
     subgraph "Output Generation"
         SIDEBYSIDE[Side-by-Side View]
         DASHBOARD[Analysis Dashboard]
         JSON[Statistics JSON]
     end
 
-    %% ========================
     %% Connections
-    %% ========================
     UI --> API
     TABS --> API
 
@@ -72,10 +55,8 @@ graph TB
     IMG --> ASSETS
     IMG --> UPLOAD
 
-    CD --> PREP
-    PREP --> DETECT
-    DETECT --> POST
-    POST --> STATS
+    CD --> DETECT
+    DETECT --> STATS
 
     VIZ --> SIDEBYSIDE
     VIZ --> DASHBOARD
@@ -85,24 +66,6 @@ graph TB
     DASHBOARD --> UI
     JSON --> UI
 
-    %% ========================
-    %% Styles
-    %% ========================
-    style UI fill:#cce5ff,stroke:#333,stroke-width:1px
-    style TABS fill:#cce5ff,stroke:#333,stroke-width:1px
-    style API fill:#e1bee7,stroke:#333,stroke-width:1px
-    style IMG fill:#dcedc8,stroke:#333,stroke-width:1px
-    style CD fill:#dcedc8,stroke:#333,stroke-width:1px
-    style VIZ fill:#dcedc8,stroke:#333,stroke-width:1px
-    style ASSETS fill:#f8bbd0,stroke:#333,stroke-width:1px
-    style UPLOAD fill:#f8bbd0,stroke:#333,stroke-width:1px
-    style PREP fill:#ffe0b2,stroke:#333,stroke-width:1px
-    style DETECT fill:#ffe0b2,stroke:#333,stroke-width:1px
-    style POST fill:#ffe0b2,stroke:#333,stroke-width:1px
-    style STATS fill:#ffe0b2,stroke:#333,stroke-width:1px
-    style SIDEBYSIDE fill:#bbdefb,stroke:#333,stroke-width:1px
-    style DASHBOARD fill:#bbdefb,stroke:#333,stroke-width:1px
-    style JSON fill:#bbdefb,stroke:#333,stroke-width:1px
 ```
 
 
