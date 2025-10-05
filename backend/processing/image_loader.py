@@ -36,6 +36,34 @@ class ImageLoader:
             return None
     
     @staticmethod
+    def load_from_path(image_path):
+        """
+        Load image from file path and convert to numpy array
+        
+        Args:
+            image_path: Path to image file
+        
+        Returns:
+            numpy array (H, W, C) or None
+        """
+        try:
+            image = Image.open(image_path)
+            image_array = np.array(image)
+            
+            # Convert to RGB if grayscale
+            if len(image_array.shape) == 2:
+                image_array = np.stack([image_array] * 3, axis=-1)
+            
+            # Ensure 3 channels
+            if len(image_array.shape) == 3 and image_array.shape[2] == 4:
+                image_array = image_array[:, :, :3]
+            
+            return image_array
+        except Exception as e:
+            print(f"Error loading image from path {image_path}: {e}")
+            return None
+    
+    @staticmethod
     def array_to_base64(image_array):
         """
         Convert numpy array to base64 encoded string

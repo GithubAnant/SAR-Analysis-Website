@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import numpy as np
 import base64
 import io
+import os
 from typing import Optional, List
 
 from api.sentinel_api import sentinel_api
@@ -31,6 +32,9 @@ app.add_middleware(
 image_loader = ImageLoader()
 change_detector = ChangeDetector()
 
+# Path to assets folder
+ASSETS_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets")
+
 @app.get("/")
 async def root():
     """Root endpoint with API information"""
@@ -39,9 +43,10 @@ async def root():
         "version": "1.0.0",
         "endpoints": {
             "health": "/health",
-            "hotspots": "/hotspots",
+            "hotspots": "/hotspots", 
             "analyze": "/analyze",
-            "upload_analyze": "/upload-analyze"
+            "upload_analyze": "/upload-analyze",
+            "test_images": "/test-images"
         }
     }
 
@@ -55,30 +60,38 @@ async def get_hotspots():
     """Get available analysis hotspots"""
     return {"hotspots": config.HOTSPOTS}
 
-@app.get("/test-sentinel")
-async def test_sentinel_connection():
-    """Test Sentinel Hub API connection"""
+@app.get("/test-images")
+async def test_local_images():
+    """Test local image assets availability"""
     try:
-        # Test authentication
-        token = sentinel_api.get_access_token()
-        if not token:
-            return {
-                "status": "error",
-                "message": "Failed to get access token. Check your credentials.",
-                "credentials_configured": bool(config.SENTINEL_CLIENT_ID and config.SENTINEL_CLIENT_SECRET)
-            }
+        missing_images = []
+        available_images = []
+        
+        for location, hotspot in config.HOTSPOTS.items():
+            before_path = os.path.join(ASSETS_PATH, hotspot.get("image_before", ""))
+            after_path = os.path.join(ASSETS_PATH, hotspot.get("image_after", ""))
+            
+            if not os.path.exists(before_path):
+                missing_images.append(f"{location}: {hotspot.get('image_before', 'N/A')}")
+            else:
+                available_images.append(f"{location}: {hotspot.get('image_before', 'N/A')}")
+                
+            if not os.path.exists(after_path):
+                missing_images.append(f"{location}: {hotspot.get('image_after', 'N/A')}")
+            else:
+                available_images.append(f"{location}: {hotspot.get('image_after', 'N/A')}")
         
         return {
-            "status": "success",
-            "message": "Successfully connected to Sentinel Hub API",
-            "credentials_configured": True,
-            "token_length": len(token)
+            "status": "success" if not missing_images else "warning",
+            "assets_path": ASSETS_PATH,
+            "available_images": available_images,
+            "missing_images": missing_images,
+            "total_locations": len(config.HOTSPOTS)
         }
     except Exception as e:
         return {
             "status": "error",
-            "message": f"Connection failed: {str(e)}",
-            "credentials_configured": bool(config.SENTINEL_CLIENT_ID and config.SENTINEL_CLIENT_SECRET)
+            "message": f"Error checking images: {str(e)}"
         }
 
 @app.post("/analyze")
@@ -108,41 +121,44 @@ async def analyze_location(
         if date_after_obj <= date_before_obj:
             raise HTTPException(status_code=400, detail="date_after must be after date_before")
         
-        # Get location coordinates
+        # Get location and image files
         if location in config.HOTSPOTS:
             hotspot = config.HOTSPOTS[location]
             lat, lon = hotspot["lat"], hotspot["lon"]
             bbox_size = hotspot.get("bbox_size", bbox_size)
+            image_before_filename = hotspot.get("image_before")
+            image_after_filename = hotspot.get("image_after")
         else:
             raise HTTPException(status_code=400, detail=f"Unknown location: {location}")
         
-        # Fetch images from Sentinel Hub
-        print(f"Fetching SAR images for {location} ({lat}, {lon})")
+        # Load images from assets folder
+        print(f"Loading local images for {location}: {image_before_filename} and {image_after_filename}")
         
-        # Check if Sentinel Hub credentials are configured
-        if not config.SENTINEL_CLIENT_ID or not config.SENTINEL_CLIENT_SECRET:
+        if not image_before_filename or not image_after_filename:
             raise HTTPException(
                 status_code=500,
-                detail="Sentinel Hub credentials not configured. Please check your .env file."
+                detail=f"Image files not configured for location: {location}"
             )
         
-        image_before_bytes = await fetch_sar_image_async(lat, lon, date_before, bbox_size)
-        if not image_before_bytes:
+        image_before_path = os.path.join(ASSETS_PATH, image_before_filename)
+        image_after_path = os.path.join(ASSETS_PATH, image_after_filename)
+        
+        # Check if image files exist
+        if not os.path.exists(image_before_path):
             raise HTTPException(
                 status_code=404, 
-                detail=f"Could not fetch SAR image for {date_before} or any available date within 30 days. The images may not be available for this location."
+                detail=f"Before image not found: {image_before_filename}"
             )
             
-        image_after_bytes = await fetch_sar_image_async(lat, lon, date_after, bbox_size)
-        if not image_after_bytes:
+        if not os.path.exists(image_after_path):
             raise HTTPException(
                 status_code=404, 
-                detail=f"Could not fetch SAR image for {date_after} or any available date within 30 days. The images may not be available for this location."
+                detail=f"After image not found: {image_after_filename}"
             )
         
-        # Load images
-        image_before = image_loader.load_from_bytes(image_before_bytes)
-        image_after = image_loader.load_from_bytes(image_after_bytes)
+        # Load images from file paths
+        image_before = image_loader.load_from_path(image_before_path)
+        image_after = image_loader.load_from_path(image_after_path)
         
         if image_before is None or image_after is None:
             raise HTTPException(status_code=500, detail="Failed to process SAR images")
@@ -165,6 +181,10 @@ async def analyze_location(
             "coordinates": {"lat": lat, "lon": lon},
             "date_before": date_before,
             "date_after": date_after,
+            "images_used": {
+                "before": image_before_filename,
+                "after": image_after_filename
+            },
             "statistics": results['statistics'],
             "visualizations": {
                 "side_by_side": image_loader.array_to_base64(side_by_side) if side_by_side is not None else None,
@@ -243,9 +263,7 @@ async def upload_analyze(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Upload analysis failed: {str(e)}")
 
-async def fetch_sar_image_async(lat: float, lon: float, date: str, bbox_size: float, max_days_back: int = 30):
-    """Async wrapper for SAR image fetching"""
-    return sentinel_api.fetch_sar_image(lat, lon, date, bbox_size, max_days_back)
+# Note: Using local images instead of Sentinel API
 
 if __name__ == "__main__":
     import uvicorn

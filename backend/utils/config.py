@@ -16,41 +16,93 @@ class Config:
     IMAGE_WIDTH = 512
     IMAGE_HEIGHT = 512
     
-    # Processing parameters
-    CHANGE_THRESHOLD = 3.0  # dB threshold for change detection
-    MIN_CHANGE_AREA = 100   # minimum pixels for valid change
+    # Processing parameters - Balanced sensitivity
+    CHANGE_THRESHOLD = 25.0  # Moderate threshold for balanced detection
+    MIN_CHANGE_AREA = 150    # Smaller minimum area for better detection
+    COLOR_CHANGE_THRESHOLD = 30.0  # Lower Delta E threshold for more sensitivity
+    CONTRAST_THRESHOLD = 8.0  # Lower contrast requirement
     
-    # Hotspot coordinates (lat, lon, name)
+    # Hotspot coordinates and local image mappings
     HOTSPOTS = {
-        "amazon": {
+        "antarctica_glaciers": {
+            "name": "Antarctica Glaciers",
+            "lat": -77.8419,
+            "lon": 166.6863,
+            "bbox_size": 0.1,
+            "image_before": "antarctica1.webp",
+            "image_after": "antarctica2.webp"
+        },
+        "iraq": {
+            "name": "Iraq Military Base", 
+            "lat": 33.3152,
+            "lon": 44.3661,
+            "bbox_size": 0.1,
+            "image_before": "iraq1.webp",
+            "image_after": "iraq2.webp"
+        },
+        "rotterdam_port": {
+            "name": "Rotterdam Port",
+            "lat": 51.9225,
+            "lon": 4.4792,
+            "bbox_size": 0.1,
+            "image_before": "rotterdam1.png",
+            "image_after": "rotterdam2.png"
+        },
+        "singapore_port": {
+            "name": "Singapore Port",
+            "lat": 1.2966,
+            "lon": 103.8764,
+            "bbox_size": 0.1,
+            "image_before": "port1.webp",
+            "image_after": "port2.webp"
+        },
+        "amazon_rainforest": {
             "name": "Amazon Rainforest",
             "lat": -3.4653,
             "lon": -62.2159,
-            "bbox_size": 0.1
+            "bbox_size": 0.1,
+            "image_before": "deforestation1.png",
+            "image_after": "deforestation2.png"
         },
-        "jakarta": {
-            "name": "Jakarta, Indonesia",
-            "lat": -6.2088,
-            "lon": 106.8456,
-            "bbox_size": 0.1
+        "oman_oil_spill": {
+            "name": "Oman Oil Spill",
+            "lat": 20.5937,
+            "lon": 56.8974,
+            "bbox_size": 0.1,
+            "image_before": "oil1.webp",
+            "image_after": "oil2.webp"
         },
-        "iceland": {
-            "name": "Iceland Volcano",
-            "lat": 63.6318,
-            "lon": -19.6083,
-            "bbox_size": 0.1
+        "military_base": {
+            "name": "Military Base",
+            "lat": 35.0000,
+            "lon": 45.0000,
+            "bbox_size": 0.1,
+            "image_before": "site1.webp",
+            "image_after": "site2.webp"
         },
-        "california": {
-            "name": "California",
-            "lat": 36.7783,
-            "lon": -119.4179,
-            "bbox_size": 0.1
+        "deserted_border": {
+            "name": "Desert Border",
+            "lat": 30.0000,
+            "lon": 35.0000,
+            "bbox_size": 0.1,
+            "image_before": "border1.webp",
+            "image_after": "border2.webp"
         },
-        "greenland": {
-            "name": "Greenland Glacier",
-            "lat": 69.2138,
-            "lon": -49.9460,
-            "bbox_size": 0.1
+        "european_port": {
+            "name": "European Port",
+            "lat": 52.3676,
+            "lon": 4.9041,
+            "bbox_size": 0.1,
+            "image_before": "europe1.png",
+            "image_after": "europe2.png"
+        },
+        "gulf_of_bothnia": {
+            "name": "Gulf of Bothnia Ice Cap",
+            "lat": 63.8467,
+            "lon": 20.2490,
+            "bbox_size": 0.1,
+            "image_before": "ice1.webp",
+            "image_after": "ice2.webp"
         }
     }
 
